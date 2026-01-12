@@ -39,6 +39,7 @@ label {
 }
 
 input,
+select,
 button,
 textarea {
   width: 100%;
