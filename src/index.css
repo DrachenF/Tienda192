@@ -37,6 +37,11 @@ h2 {
   margin: 12px 0 4px;
 }
 
+h3 {
+  font-size: 1rem;
+  margin: 8px 0 4px;
+}
+
 label {
   display: block;
   font-size: 0.9rem;
@@ -94,6 +99,29 @@ button {
 }
 
 .order-row {
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.order-card {
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.order-items {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 8px;
+}
+
+.order-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.product-edit {
   padding: 10px;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
