@@ -32,6 +32,11 @@ h1 {
   margin-top: 0;
 }
 
+h2 {
+  font-size: 1.05rem;
+  margin: 12px 0 4px;
+}
+
 label {
   display: block;
   font-size: 0.9rem;
@@ -54,6 +59,49 @@ button {
   color: #ffffff;
   cursor: pointer;
   margin-top: 12px;
+}
+
+.product-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qty-controls button {
+  width: 32px;
+  padding: 6px 0;
+  margin-top: 0;
+}
+
+.qty-controls span {
+  min-width: 20px;
+  text-align: center;
+}
+
+.cart-item {
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.order-row {
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.muted {
+  color: #6b7280;
+  font-weight: normal;
 }
 
 .helper {
