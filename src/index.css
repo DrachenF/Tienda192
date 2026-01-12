@@ -1,0 +1,161 @@
+:root {
+  color-scheme: light;
+  font-family: Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f3f4f6;
+  color: #111827;
+}
+
+main {
+  min-height: 100vh;
+  padding: 16px;
+}
+
+.container {
+  max-width: 420px;
+  margin: 0 auto;
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+h1 {
+  font-size: 1.25rem;
+  margin-top: 0;
+}
+
+h2 {
+  font-size: 1.05rem;
+  margin: 12px 0 4px;
+}
+
+h3 {
+  font-size: 1rem;
+  margin: 8px 0 4px;
+}
+
+label {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+
+input,
+select,
+button,
+textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  font-size: 1rem;
+}
+
+button {
+  background: #111827;
+  color: #ffffff;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+.product-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.qty-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.qty-controls button {
+  width: 32px;
+  padding: 6px 0;
+  margin-top: 0;
+}
+
+.qty-controls span {
+  min-width: 20px;
+  text-align: center;
+}
+
+.cart-item {
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.order-row {
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.order-card {
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.order-items {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 8px;
+}
+
+.order-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.product-edit {
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.muted {
+  color: #6b7280;
+  font-weight: normal;
+}
+
+.helper {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.alert {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.notice {
+  background: #e0f2fe;
+  border: 1px solid #bae6fd;
+  color: #075985;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.stack {
+  display: grid;
+  gap: 12px;
+}
