@@ -9,12 +9,14 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  updateDoc,
   where,
 } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
-import { auth, db, firebaseInitError } from '../config/firebase';
+import { auth, db, firebaseInitError, storage } from '../config/firebase';
 import { storeName, storeWhatsApp } from '../config/appSettings';
 
 type Category = {
@@ -46,10 +48,19 @@ type OrderRecord = {
   status: string;
   total: number;
   createdAt?: string;
+  paymentMethod?: string | null;
+  transferProofUrl?: string | null;
 };
 
 type UserProfile = {
   houseKey: string;
+};
+
+type PaymentSettings = {
+  bankName?: string;
+  accountNumber?: string;
+  accountOwner?: string;
+  notes?: string;
 };
 
 const UNIT_LABELS: Record<string, string> = {
@@ -72,8 +83,14 @@ export const ClientAppPage = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('EFECTIVO');
+  const [cashAmount, setCashAmount] = useState('');
+  const [uploadingOrderId, setUploadingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     if (firebaseInitError || !auth || !db) {
@@ -113,6 +130,17 @@ export const ClientAppPage = () => {
       });
       setProducts(productsData);
 
+      const settingsSnap = await getDoc(doc(db, 'settings', 'payment'));
+      if (settingsSnap.exists()) {
+        const data = settingsSnap.data();
+        setPaymentSettings({
+          bankName: data.bankName as string,
+          accountNumber: data.accountNumber as string,
+          accountOwner: data.accountOwner as string,
+          notes: data.notes as string,
+        });
+      }
+
       const ordersQuery = query(
         collection(db, 'orders'),
         where('userId', '==', user.uid),
@@ -125,6 +153,8 @@ export const ClientAppPage = () => {
         status: (item.data().status as string) ?? 'SIN_ESTADO',
         total: (item.data().total as number) ?? 0,
         createdAt: item.data().createdAt?.toDate?.().toLocaleString?.(),
+        paymentMethod: (item.data().paymentMethod as string) ?? null,
+        transferProofUrl: (item.data().transferProofUrl as string) ?? null,
       }));
       setOrders(ordersData);
     });
@@ -239,6 +269,14 @@ export const ClientAppPage = () => {
       setError('Agrega productos o escribe un pedido.');
       return;
     }
+    if (paymentMethod === 'EFECTIVO' && !cashAmount) {
+      setError('Indica con cuánto pagas.');
+      return;
+    }
+    if (paymentMethod === 'TRANSFERENCIA' && status !== 'COTIZADO_CONFIRMAR') {
+      setError('Transferencia solo disponible cuando el pedido está cotizado.');
+      return;
+    }
 
     try {
       setSaving(true);
@@ -247,7 +285,8 @@ export const ClientAppPage = () => {
         userId: user.uid,
         houseKey: userProfile.houseKey,
         status,
-        paymentMethod: null,
+        paymentMethod,
+        cashAmount: paymentMethod === 'EFECTIVO' ? Number(cashAmount) : null,
         total,
         items: cartItems,
         createdAt: serverTimestamp(),
@@ -256,10 +295,47 @@ export const ClientAppPage = () => {
       setFreeText('');
       setQuantities({});
       setNotes({});
+      setCashAmount('');
     } catch (err) {
       setError('No se pudo guardar el pedido.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUploadProof = async (orderId: string, file: File | null) => {
+    setError(null);
+    if (!file) {
+      return;
+    }
+    if (firebaseInitError || !auth || !db || !storage) {
+      setError(firebaseInitError ?? 'Firebase no está configurado.');
+      return;
+    }
+    const user = auth.currentUser;
+    if (!user) {
+      setError('Necesitas iniciar sesión.');
+      return;
+    }
+    try {
+      setUploadingOrderId(orderId);
+      const fileRef = ref(storage, `transferProofs/${user.uid}/${orderId}.jpg`);
+      await uploadBytes(fileRef, file);
+      const url = await getDownloadURL(fileRef);
+      await updateDoc(doc(db, 'orders', orderId), {
+        paymentMethod: 'TRANSFERENCIA',
+        transferProofUrl: url,
+        updatedAt: serverTimestamp(),
+      });
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === orderId ? { ...order, transferProofUrl: url } : order,
+        ),
+      );
+    } catch (err) {
+      setError('No se pudo subir el comprobante.');
+    } finally {
+      setUploadingOrderId(null);
     }
   };
 
@@ -364,6 +440,33 @@ export const ClientAppPage = () => {
         <div className="notice">
           Estado: {status} | Total: S/ {total}
         </div>
+        <div className="stack">
+          <label htmlFor="paymentMethod">Método de pago</label>
+          <select
+            id="paymentMethod"
+            value={paymentMethod}
+            onChange={(event) => setPaymentMethod(event.target.value)}
+          >
+            <option value="EFECTIVO">EFECTIVO</option>
+            <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+          </select>
+          {paymentMethod === 'EFECTIVO' && (
+            <div>
+              <label htmlFor="cashAmount">¿Con cuánto pagas?</label>
+              <input
+                id="cashAmount"
+                inputMode="numeric"
+                value={cashAmount}
+                onChange={(event) => setCashAmount(event.target.value)}
+              />
+            </div>
+          )}
+          {paymentMethod === 'TRANSFERENCIA' && (
+            <div className="notice">
+              Transferencia solo disponible cuando el pedido esté cotizado.
+            </div>
+          )}
+        </div>
         <button type="button" onClick={handleSubmitOrder} disabled={saving}>
           {saving ? 'Guardando...' : 'Enviar pedido'}
         </button>
@@ -381,6 +484,38 @@ export const ClientAppPage = () => {
             <div className="helper">Total: S/ {order.total}</div>
             {order.createdAt && (
               <div className="helper">Fecha: {order.createdAt}</div>
+            )}
+            {order.status === 'COTIZADO_CONFIRMAR' && (
+              <div className="stack">
+                <div className="notice">
+                  Datos bancarios:{' '}
+                  {paymentSettings
+                    ? `${paymentSettings.bankName ?? ''} ${
+                        paymentSettings.accountNumber ?? ''
+                      } ${paymentSettings.accountOwner ?? ''}`
+                    : 'No configurados'}
+                </div>
+                {paymentSettings?.notes && (
+                  <div className="helper">{paymentSettings.notes}</div>
+                )}
+                <label htmlFor={`proof-${order.id}`}>
+                  Subir comprobante (transferencia)
+                </label>
+                <input
+                  id={`proof-${order.id}`}
+                  type="file"
+                  accept="image/*"
+                  disabled={uploadingOrderId === order.id}
+                  onChange={(event) =>
+                    handleUploadProof(order.id, event.target.files?.[0] ?? null)
+                  }
+                />
+                {order.transferProofUrl && (
+                  <a className="helper" href={order.transferProofUrl} target="_blank">
+                    Ver comprobante
+                  </a>
+                )}
+              </div>
             )}
           </div>
         ))}
