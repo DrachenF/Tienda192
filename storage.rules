@@ -1,0 +1,22 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/(default)/documents/admins/$(request.auth.uid));
+    }
+
+    match /transferProofs/{uid}/{orderId}.jpg {
+      allow read, write: if isSignedIn()
+        && (request.auth.uid == uid || isAdmin());
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

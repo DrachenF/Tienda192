@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    match /users/{userId} {
+      allow read, write: if isSignedIn()
+        && (request.auth.uid == userId || isAdmin());
+    }
+
+    function noAdmins() {
+      return !exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    match /admins/{adminId} {
+      allow read: if isAdmin()
+        || (isSignedIn() && request.auth.uid == adminId);
+      allow create: if isSignedIn()
+        && request.resource.id == request.auth.uid
+        && noAdmins();
+      allow update, delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isSignedIn()
+        && (isAdmin() || request.auth.uid == resource.data.userId);
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn()
+        && (isAdmin() || request.auth.uid == resource.data.userId);
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /catalogMeta/{metaId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
